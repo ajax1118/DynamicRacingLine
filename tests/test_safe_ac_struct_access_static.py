@@ -1,9 +1,7 @@
 from pathlib import Path
 
 
-SRC = Path(
-    r"C:\Program Files (x86)\Steam\steamapps\common\assettocorsa\apps\lua\DynamicRacingLine\src"
-)
+SRC = Path(__file__).resolve().parents[1] / "src"
 
 
 def read(name: str) -> str:

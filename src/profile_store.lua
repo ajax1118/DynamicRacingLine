@@ -70,7 +70,9 @@ local function sortedKeys(value)
   return keys
 end
 
-local function encodeValue(value)
+local function encodeValue(value, depth)
+  depth = tonumber(depth) or 0
+  if depth > 8 then return 'null' end
   local valueType = type(value)
   if valueType == 'nil' then return 'null' end
   if valueType == 'boolean' then return value and 'true' or 'false' end
@@ -91,13 +93,13 @@ local function encodeValue(value)
   end
   if array and maxIndex == count then
     local parts = {}
-    for i = 1, maxIndex do parts[#parts + 1] = encodeValue(value[i]) end
+    for i = 1, maxIndex do parts[#parts + 1] = encodeValue(value[i], depth + 1) end
     return '[' .. table.concat(parts, ',') .. ']'
   end
 
   local parts = {}
   for _, key in ipairs(sortedKeys(value)) do
-    parts[#parts + 1] = '"' .. jsonEscape(key) .. '":' .. encodeValue(value[key])
+    parts[#parts + 1] = '"' .. jsonEscape(key) .. '":' .. encodeValue(value[key], depth + 1)
   end
   return '{' .. table.concat(parts, ',') .. '}'
 end

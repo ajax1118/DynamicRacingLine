@@ -38,16 +38,25 @@ local function confidenceCap(context)
   return clamp(cap, 0.18, 0.82)
 end
 
+local function capabilitySource(profile)
+  return type(profile and profile.capability) == 'table' and profile.capability or profile or {}
+end
+
 function M.stageRuntimeProfiles(session, car, runtimeProfile, context)
   session = session or {}
   car = car or {}
   runtimeProfile = runtimeProfile or {}
   context = context or {}
   local carProfile = runtimeProfile.car or {}
+  local carCapability = capabilitySource(carProfile)
   local trackProfile = runtimeProfile.track or {}
   local cap = confidenceCap(context)
   local stabilityWindow = math.max(2, math.floor(finiteNumber(settings.RUNTIME_SNAPSHOT_STABILITY_WINDOW, 4) + 0.5))
   local doNotOverwriteCurated = tostring(carProfile.source or '') ~= 'runtime_snapshot' and finiteNumber(carProfile.confidence, 0.0) >= cap
+  local brakeG = finiteNumber(context.brakeG, finiteNumber(carCapability.brake_decel_g or carCapability.brake_g or carCapability.braking_g, 1.15))
+  local corneringG = finiteNumber(context.corneringG, finiteNumber(carCapability.cornering_g or carCapability.corneringG, 1.20))
+  local speedAeroStrength = finiteNumber(context.speedAeroStrength, finiteNumber(carCapability.speed_aero_strength or carCapability.speedAeroStrength, 0.0))
+  local brakeSpeedAeroStrength = finiteNumber(context.brakeSpeedAeroStrength, finiteNumber(carCapability.brake_speed_aero_strength or carCapability.brakeSpeedAeroStrength, 0.0))
   local payload = {
     source = 'runtime_snapshot_hint',
     runtime_snapshot_hint = true,
@@ -60,16 +69,20 @@ function M.stageRuntimeProfiles(session, car, runtimeProfile, context)
       car_id = session.car_id,
       name = session.car_id,
       setup_hash = session.setup_hash,
-      brake_decel_g = finiteNumber(context.brakeG, finiteNumber(carProfile.brake_decel_g, 1.15)),
-      brake_g = finiteNumber(context.brakeG, finiteNumber(carProfile.brake_decel_g, 1.15)),
-      cornering_g = finiteNumber(context.corneringG, finiteNumber(carProfile.cornering_g, 1.20)),
-      speed_aero_strength = finiteNumber(context.speedAeroStrength, finiteNumber(carProfile.speed_aero_strength, 0.0)),
-      brakeSpeedAeroStrength = finiteNumber(context.brakeSpeedAeroStrength, finiteNumber(carProfile.brake_speed_aero_strength, 0.0)),
-      brakePowerMult = finiteNumber(context.brakePowerMult, finiteNumber(car.brakePowerMult, 1.0)),
-      brakeBias = finiteNumber(context.brakeBias, finiteNumber(car.brakeBias, 0.0)),
-      physicsTyreBrakeLoadSensitivityFactor = finiteNumber(context.physicsTyreBrakeLoadSensitivityFactor,
-        finiteNumber(carProfile.physics_tyre_brake_load_sensitivity_factor, 1.0)),
       confidence = cap,
+      capability = {
+        braking_g = brakeG,
+        brake_decel_g = brakeG,
+        brake_g = brakeG,
+        cornering_g = corneringG,
+        speed_aero_strength = speedAeroStrength,
+        brake_speed_aero_strength = brakeSpeedAeroStrength,
+        brakeSpeedAeroStrength = brakeSpeedAeroStrength,
+        brakePowerMult = finiteNumber(context.brakePowerMult, finiteNumber(car.brakePowerMult, finiteNumber(carCapability.brakePowerMult, 1.0))),
+        brakeBias = finiteNumber(context.brakeBias, finiteNumber(car.brakeBias, finiteNumber(carCapability.brakeBias, 0.0))),
+        physicsTyreBrakeLoadSensitivityFactor = finiteNumber(context.physicsTyreBrakeLoadSensitivityFactor,
+          finiteNumber(carCapability.physicsTyreBrakeLoadSensitivityFactor or carCapability.physics_tyre_brake_load_sensitivity_factor, 1.0)),
+      },
     },
     track = {
       id = session.track_id,
@@ -87,15 +100,15 @@ function M.stageRuntimeProfiles(session, car, runtimeProfile, context)
   }
   local key = sessionKey(session)
   local state = stagedBySession[key] or { count = 0, lastBrakeG = nil, lastCorneringG = nil }
-  local brakeDelta = state.lastBrakeG and math.abs(state.lastBrakeG - payload.car.brake_decel_g) or 0.0
-  local cornerDelta = state.lastCorneringG and math.abs(state.lastCorneringG - payload.car.cornering_g) or 0.0
+  local brakeDelta = state.lastBrakeG and math.abs(state.lastBrakeG - payload.car.capability.brake_decel_g) or 0.0
+  local cornerDelta = state.lastCorneringG and math.abs(state.lastCorneringG - payload.car.capability.cornering_g) or 0.0
   if brakeDelta < 0.18 and cornerDelta < 0.18 then
     state.count = state.count + 1
   else
     state.count = 1
   end
-  state.lastBrakeG = payload.car.brake_decel_g
-  state.lastCorneringG = payload.car.cornering_g
+  state.lastBrakeG = payload.car.capability.brake_decel_g
+  state.lastCorneringG = payload.car.capability.cornering_g
   state.payload = payload
   stagedBySession[key] = state
   payload.stableSamples = state.count
@@ -112,6 +125,7 @@ function M.promoteIfStable(session, staged, context)
   local confidenceCapValue = confidenceCap(context or {})
   staged.car.source = 'runtime_snapshot_promoted'
   staged.car.confidence = math.min(finiteNumber(staged.car.confidence, 0.0), confidenceCapValue)
+  if type(staged.car.capability) == 'table' then staged.car.capability.confidence = staged.car.confidence end
   staged.track.source = 'runtime_snapshot_promoted'
   staged.track.confidence = math.min(finiteNumber(staged.track.confidence, 0.0), confidenceCapValue)
   return {

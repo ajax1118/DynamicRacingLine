@@ -170,7 +170,12 @@ function M.estimateCarPhysics(ctx)
   local setup = ctx.setup or {}
   local out = {}
   local profile = ctx.physicsProfile or ctx.carProfile or {}
+  local capability = type(profile and profile.capability) == 'table' and profile.capability or {}
   if type(profile) == 'table' then for k, v in pairs(profile) do out[k] = v end end
+  for k, v in pairs(capability) do if out[k] == nil then out[k] = v end end
+  if out.brakeDecelMps2 == nil and (out.brake_decel_g or out.brake_g or out.braking_g) then
+    out.brakeDecelMps2 = (tonumber(out.brake_decel_g or out.brake_g or out.braking_g) or 0) * Config.GRAVITY
+  end
   local corneringG = tonumber(telem.corneringG or telem.lateralG or telem.maxLateralG)
   local brakeG = tonumber(telem.brakeG or telem.maxBrakeG)
   local brakePowerMult = tonumber(setup.brakePowerMult or setup.brakePowerMultiplier or telem.brakePowerMult)

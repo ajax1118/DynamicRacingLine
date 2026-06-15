@@ -1,9 +1,7 @@
 from pathlib import Path
 
 
-APP_ROOT = Path(
-    r"C:\Program Files (x86)\Steam\steamapps\common\assettocorsa\apps\lua\DynamicRacingLine"
-)
+APP_ROOT = Path(__file__).resolve().parents[1]
 SRC = APP_ROOT / "src"
 DATA = APP_ROOT / "data"
 

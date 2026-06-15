@@ -2,9 +2,7 @@ import json
 from pathlib import Path
 
 
-APP_ROOT = Path(
-    r"C:\Program Files (x86)\Steam\steamapps\common\assettocorsa\apps\lua\DynamicRacingLine"
-)
+APP_ROOT = Path(__file__).resolve().parents[1]
 SRC = APP_ROOT / "src"
 LINE_CORE = SRC / "line_core"
 DEFAULT_TRACK = APP_ROOT / "data" / "tracks" / "default" / "default"
@@ -30,6 +28,7 @@ def test_default_track_files_have_runtime_schema_contracts():
         assert data["schema"] == schema
 
     assert load_json(DEFAULT_TRACK / "corners.json")["corners"] == []
+    assert load_json(DEFAULT_TRACK / "base_line.json")["source"] == "pending_ac_csp_geometry"
 
 
 def test_surface_mapping_uses_r02_risk_map_fields_once():
@@ -162,3 +161,58 @@ def test_whole_app_review_runtime_guards():
     assert "brakeCueMissingZoneStart" in regression
     assert "hazard.grip = 0.37" in surface_hazards
     assert "speed_mps = p.solvedSpeedMps or p.targetSpeedMps or 10.0" in profile_manager
+
+
+def test_runtime_capability_profiles_use_nested_schema_and_loader_compatibility():
+    lambo = load_json(APP_ROOT / "data" / "cars" / "ks_lamborghini_gallardo_sl_s3" / "car_profile.json")
+    mercedes = load_json(APP_ROOT / "data" / "cars" / "mercedes_sls" / "car_profile.json")
+    snapshot_stager = read(SRC / "snapshot_stager.lua")
+    profile_loader = read(SRC / "profile_loader.lua")
+    dynamic_context = read(SRC / "dynamic_context.lua")
+    line_core_dynamic = read(LINE_CORE / "dynamic_context.lua")
+
+    for profile in [lambo, mercedes]:
+        assert "capability" in profile
+        assert "brake_g" not in profile
+        assert "cornering_g" not in profile
+        assert "speed_aero_strength" not in profile
+        assert profile["capability"]["brake_decel_g"] > 0
+        assert profile["capability"]["cornering_g"] > 0
+
+    assert "capability = {" in snapshot_stager
+    assert "payload.car.capability.brake_decel_g" in snapshot_stager
+    assert "carCapabilityValue(car" in profile_loader
+    assert "carProfile.capability" in dynamic_context
+    assert "profile and profile.capability" in line_core_dynamic
+
+
+def test_coderabbit_runtime_safety_regressions_are_covered():
+    diagnostics = read(LINE_CORE / "diagnostics.lua")
+    validator = read(LINE_CORE / "validator.lua")
+    evaluator = read(LINE_CORE / "path_evaluator.lua")
+    tile_window = read(LINE_CORE / "tile_window.lua")
+    regression = read(SRC / "regression_harness.lua")
+    profile_store = read(SRC / "profile_store.lua")
+    legacy = read(LINE_CORE / "legacy_constants_bridge.lua")
+    runtime_context = read(LINE_CORE / "runtime_context.lua")
+
+    assert "type(guidance) ~= 'table'" in diagnostics
+    assert "step_seam" in validator
+    assert "accel_seam" in validator
+    assert "jerk_seam" in validator
+    assert "wi(i - 3, n)" in evaluator
+    assert "local function cloneWindow" in tile_window
+    assert "local reused = cloneWindow(lastGoodWindow)" in tile_window
+    assert "brake.brakeCueErrorM ~= nil" in regression
+    assert "function encodeValue(value, depth)" in profile_store
+    assert "depth > 8" in profile_store
+    assert "requires an explicit target table" in legacy
+    assert "return Dynamic.setupHash" in runtime_context
+
+
+def test_static_tests_use_repo_relative_app_root():
+    forbidden = ["Program" + " Files", "steam" + "apps"]
+    for path in sorted((APP_ROOT / "tests").glob("*.py")):
+        text = read(path)
+        for token in forbidden:
+            assert token not in text

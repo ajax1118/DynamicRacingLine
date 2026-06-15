@@ -1,9 +1,7 @@
 from pathlib import Path
 
 
-APP_ROOT = Path(
-    r"C:\Program Files (x86)\Steam\steamapps\common\assettocorsa\apps\lua\DynamicRacingLine"
-)
+APP_ROOT = Path(__file__).resolve().parents[1]
 SRC = APP_ROOT / "src"
 
 
@@ -13,10 +11,9 @@ def read(name: str) -> str:
 
 def test_cue_model_uses_corner_targets_not_brake_profile_as_authority():
     cue_model = read("cue_model.lua")
-    cue_target_fn = cue_model.split("local function cueTargetSpeedKph", 1)[1].split("end", 1)[0]
 
-    assert "brakeProfileTargetSpeedKph" not in cue_target_fn
-    assert "targetSpeedKph" in cue_target_fn
+    assert "brakeProfileTargetSpeedKph" not in cue_model
+    assert "targetSpeedKph" in cue_model
     assert "directMinTargetDistanceM" in cue_model
     assert "distance >= directMinTargetDistanceM" in cue_model
 

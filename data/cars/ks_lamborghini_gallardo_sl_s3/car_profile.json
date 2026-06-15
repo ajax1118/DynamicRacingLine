@@ -1,1 +1,19 @@
-{"brakeBias":0.68999999761581,"brakePowerMult":1,"brakeSpeedAeroStrength":0.039131649782875,"brake_decel_g":0.88547853144119,"brake_g":0.88547853144119,"car_id":"ks_lamborghini_gallardo_sl_s3","confidence":0.7,"cornering_g":0.96778151917701,"id":"ks_lamborghini_gallardo_sl_s3","name":"ks_lamborghini_gallardo_sl_s3","physicsTyreBrakeLoadSensitivityFactor":0.98829537047111,"setup_hash":"53cf4df4","source":"runtime_snapshot_promoted","speed_aero_strength":0.039131649782875}
+{
+  "car_id": "ks_lamborghini_gallardo_sl_s3",
+  "id": "ks_lamborghini_gallardo_sl_s3",
+  "name": "ks_lamborghini_gallardo_sl_s3",
+  "setup_hash": "53cf4df4",
+  "confidence": 0.7,
+  "source": "runtime_snapshot_promoted",
+  "capability": {
+    "braking_g": 0.88547853144119,
+    "brake_decel_g": 0.88547853144119,
+    "brake_g": 0.88547853144119,
+    "cornering_g": 0.96778151917701,
+    "speed_aero_strength": 0.039131649782875,
+    "brake_speed_aero_strength": 0.039131649782875,
+    "brakePowerMult": 1,
+    "brakeBias": 0.68999999761581,
+    "physicsTyreBrakeLoadSensitivityFactor": 0.98829537047111
+  }
+}

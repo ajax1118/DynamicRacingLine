@@ -8,8 +8,7 @@ for k, v in pairs(Dynamic) do M[k] = v end
 
 function M.setupHashFromRuntime(ctx)
   ctx = ctx or {}
-  local Setup = require('src.line_core.setup_fingerprint')
-  return Setup.hash(ctx.setup or {}, ctx.telemetry or ctx.carState or {})
+  return Dynamic.setupHash(ctx.setup or {}, ctx.telemetry or ctx.carState or {})
 end
 
 function M.cacheKeyFromRuntime(ctx)

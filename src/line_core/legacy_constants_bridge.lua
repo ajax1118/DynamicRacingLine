@@ -19,7 +19,9 @@ function M.values()
 end
 
 function M.apply(target)
-  target = target or _G
+  if not target then
+    error('legacy_constants_bridge.apply() requires an explicit target table')
+  end
   local v = M.values()
   for k, val in pairs(v) do target[k] = val end
   return v

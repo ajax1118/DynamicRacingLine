@@ -24,6 +24,20 @@ local function normId(value)
   return value
 end
 
+local function firstValue(t, names)
+  t = t or {}
+  for _, name in ipairs(names or {}) do
+    if t[name] ~= nil then return t[name] end
+  end
+  return nil
+end
+
+local function carCapabilityValue(car, names)
+  local direct = firstValue(car, names)
+  if direct ~= nil then return direct end
+  return firstValue(type(car and car.capability) == 'table' and car.capability or {}, names)
+end
+
 local function parseJsonFile(path)
   if not io or not io.load or not JSON or not JSON.parse then return nil end
   local loaded, data = pcall(function() return io.load(path, nil) end)
@@ -97,13 +111,16 @@ local function validateCar(raw)
   local car = clone(raw or {})
   car.id = tostring(car.id or 'default')
   car.name = tostring(car.name or car.id)
-  car.has_cornering_g = raw ~= nil and raw.cornering_g ~= nil
-  car.has_brake_decel_g = raw ~= nil and raw.brake_decel_g ~= nil
-  car.has_speed_aero_strength = raw ~= nil and raw.speed_aero_strength ~= nil
-  car.cornering_g = numeric(car.cornering_g, settings.DEFAULT_CORNERING_G, 0.5, 4.5)
-  car.brake_decel_g = numeric(car.brake_decel_g, settings.DEFAULT_BRAKE_G, 0.5, settings.MAX_DYNAMIC_BRAKE_G)
+  local corneringG = carCapabilityValue(car, {'cornering_g', 'corneringG'})
+  local brakeG = carCapabilityValue(car, {'brake_decel_g', 'brake_g', 'braking_g', 'brakeG', 'brakingG'})
+  local speedAero = carCapabilityValue(car, {'speed_aero_strength', 'speedAeroStrength', 'aero_dependency'})
+  car.has_cornering_g = raw ~= nil and corneringG ~= nil
+  car.has_brake_decel_g = raw ~= nil and brakeG ~= nil
+  car.has_speed_aero_strength = raw ~= nil and speedAero ~= nil
+  car.cornering_g = numeric(corneringG, settings.DEFAULT_CORNERING_G, 0.5, 4.5)
+  car.brake_decel_g = numeric(brakeG, settings.DEFAULT_BRAKE_G, 0.5, settings.MAX_DYNAMIC_BRAKE_G)
   if car.has_speed_aero_strength then
-    car.speed_aero_strength = numeric(car.speed_aero_strength, 0.0, 0.0, 0.30)
+    car.speed_aero_strength = numeric(speedAero, 0.0, 0.0, 0.30)
   else
     car.speed_aero_strength = nil
   end

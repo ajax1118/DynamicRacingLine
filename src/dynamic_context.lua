@@ -30,7 +30,18 @@ local function capabilitySourceTrustRank(source)
 end
 
 local function profileCar(profile)
-  return profile and profile.car or {}
+  local carProfile = profile and profile.car or {}
+  local capability = type(carProfile.capability) == 'table' and carProfile.capability or nil
+  if not capability then return carProfile end
+  local out = {}
+  for k, v in pairs(carProfile) do out[k] = v end
+  if out.cornering_g == nil then out.cornering_g = capability.cornering_g or capability.corneringG end
+  if out.brake_decel_g == nil then out.brake_decel_g = capability.brake_decel_g or capability.brake_g or capability.braking_g or capability.brakeG end
+  if out.speed_aero_strength == nil then out.speed_aero_strength = capability.speed_aero_strength or capability.speedAeroStrength or capability.aero_dependency end
+  if out.has_cornering_g == nil then out.has_cornering_g = out.cornering_g ~= nil end
+  if out.has_brake_decel_g == nil then out.has_brake_decel_g = out.brake_decel_g ~= nil end
+  if out.has_speed_aero_strength == nil then out.has_speed_aero_strength = out.speed_aero_strength ~= nil end
+  return out
 end
 
 local function profileTrack(profile)

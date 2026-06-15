@@ -14,8 +14,8 @@ local function wi(i, n) while i < 1 do i = i + n end; while i > n do i = i - n e
 local function validatorCost(offsets, boundary, i, opts)
   local n = #offsets
   local b = Boundaries.at(boundary, i)
-  local dd = (offsets[wi(i + 1, n)] or 0) - 2 * (offsets[i] or 0) + (offsets[wi(i - 1, n)] or 0)
-  local jerk = (offsets[wi(i + 2, n)] or 0) - 3 * (offsets[wi(i + 1, n)] or 0) + 3 * (offsets[i] or 0) - (offsets[wi(i - 1, n)] or 0)
+  local dd = (offsets[wi(i, n)] or 0) - 2 * (offsets[wi(i - 1, n)] or 0) + (offsets[wi(i - 2, n)] or 0)
+  local jerk = (offsets[wi(i, n)] or 0) - 3 * (offsets[wi(i - 1, n)] or 0) + 3 * (offsets[wi(i - 2, n)] or 0) - (offsets[wi(i - 3, n)] or 0)
   local spacing = opts and opts.frame and opts.frame.spacing or Config.TARGET_SAMPLE_SPACING_M
   local curvatureAbs = math.abs(opts and opts.curvatures and opts.curvatures[i] or 0)
   local halfWidth = math.min(b.usableLeft or Config.DEFAULT_TRACK_HALF_WIDTH_M, b.usableRight or Config.DEFAULT_TRACK_HALF_WIDTH_M)
@@ -52,8 +52,8 @@ local function lapTimeCost(offsets, boundary, i, opts)
   local b = Boundaries.at(boundary, i)
   local risk = surfaceRisk(offsets, boundary, i, opts)
   local n = #offsets
-  local dd = (offsets[wi(i + 1, n)] or 0) - 2 * (offsets[i] or 0) + (offsets[wi(i - 1, n)] or 0)
-  local jerk = (offsets[wi(i + 2, n)] or 0) - 3 * (offsets[wi(i + 1, n)] or 0) + 3 * (offsets[i] or 0) - (offsets[wi(i - 1, n)] or 0)
+  local dd = (offsets[wi(i, n)] or 0) - 2 * (offsets[wi(i - 1, n)] or 0) + (offsets[wi(i - 2, n)] or 0)
+  local jerk = (offsets[wi(i, n)] or 0) - 3 * (offsets[wi(i - 1, n)] or 0) + 3 * (offsets[wi(i - 2, n)] or 0) - (offsets[wi(i - 3, n)] or 0)
   return math.abs(dd) * 0.35 +
     math.abs(jerk) * 0.18 +
     risk * (b.narrow and 7.2 or 4.4) +

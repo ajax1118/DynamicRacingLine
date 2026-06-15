@@ -67,6 +67,38 @@ function M.validate(offsets, frame, boundary, opts)
     end
   end
 
+  if n >= 2 then
+    local b = Boundaries.at(boundary, 1)
+    local stepLimit = Config.dynamicOffsetStepLimit(spacing, speedMps, math.min(b.usableLeft, b.usableRight), confidence)
+    local step = math.abs((offsets[1] or 0) - (offsets[n] or 0))
+    if step > stepLimit then
+      ok = false
+      reasons[#reasons + 1] = { kind = 'step_seam', index = 1, value = step, limit = stepLimit }
+    end
+  end
+
+  if n >= 3 then
+    local b = Boundaries.at(boundary, 1)
+    local curvatureAbs = math.abs(curvatureAt(curvatures, 1))
+    local accLimit = Config.dynamicOffsetAccelLimit(spacing, curvatureAbs, math.min(b.usableLeft, b.usableRight), confidence)
+    local acc = math.abs((offsets[1] or 0) - 2 * (offsets[n] or 0) + (offsets[n - 1] or 0))
+    if acc > accLimit then
+      ok = false
+      reasons[#reasons + 1] = { kind = 'accel_seam', index = 1, value = acc, limit = accLimit }
+    end
+  end
+
+  if n >= 4 then
+    local b = Boundaries.at(boundary, 1)
+    local curvatureAbs = math.abs(curvatureAt(curvatures, 1))
+    local jerkLimit = Config.dynamicOffsetJerkLimit(spacing, curvatureAbs, math.min(b.usableLeft, b.usableRight), confidence)
+    local jerk = math.abs((offsets[1] or 0) - 3 * (offsets[n] or 0) + 3 * (offsets[n - 1] or 0) - (offsets[n - 2] or 0))
+    if jerk > jerkLimit then
+      ok = false
+      reasons[#reasons + 1] = { kind = 'jerk_seam', index = 1, value = jerk, limit = jerkLimit }
+    end
+  end
+
   return { ok = ok, reasons = reasons, reasonCount = #reasons }
 end
 

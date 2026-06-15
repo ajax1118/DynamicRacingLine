@@ -88,7 +88,7 @@ function M.recordFrame(state)
     ',gas:' .. string.format('%.3f', replayableTelemetry.gas) ..
     ',spline:' .. string.format('%.6f', replayableTelemetry.splinePosition) ..
     ',cueState:' .. replayableTelemetry.cueState ..
-    ' brakeCueErrorM=' .. string.format('%.2f', brake.brakeCueErrorM) ..
+    ' brakeCueErrorM=' .. (brake.brakeCueErrorM ~= nil and string.format('%.2f', brake.brakeCueErrorM) or 'nil') ..
     ' lineSmoothnessScore=' .. string.format('%.3f', smoothness) ..
     ' tileCount=' .. tostring(#tiles) ..
     ' displayState=' .. tostring(state.displayState or 'unknown'))

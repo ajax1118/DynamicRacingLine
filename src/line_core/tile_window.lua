@@ -43,6 +43,17 @@ local function cloneTile(p)
   }
 end
 
+local function cloneWindow(window)
+  local out = {}
+  for k, v in pairs(window or {}) do out[k] = v end
+  if type(window and window.tiles) == 'table' then
+    local tiles = {}
+    for i, tile in ipairs(window.tiles) do tiles[i] = tile end
+    out.tiles = tiles
+  end
+  return out
+end
+
 function M.prepare(frame, guidancePoints, carState, opts)
   opts = opts or {}
   local now = opts.now or os.clock()
@@ -57,10 +68,11 @@ function M.prepare(frame, guidancePoints, carState, opts)
   if not frame or not frame.ok or not guidancePoints or #guidancePoints == 0 then
     if lastGoodWindow and now - lastGoodStamp < maxStaleReuseS then
       staleReuseCount = staleReuseCount + 1
-      lastGoodWindow.stale = true
-      lastGoodWindow.staleReuseCount = staleReuseCount
-      lastGoodWindow.reason = 'reused_last_good_window_no_guidance'
-      return lastGoodWindow
+      local reused = cloneWindow(lastGoodWindow)
+      reused.stale = true
+      reused.staleReuseCount = staleReuseCount
+      reused.reason = 'reused_last_good_window_no_guidance'
+      return reused
     end
     lastGoodWindow = nil
     return { ok = false, tiles = {}, reason = 'no_frame_or_guidance', tileCount = 0 }
@@ -114,10 +126,11 @@ function M.prepare(frame, guidancePoints, carState, opts)
   if #tiles == 0 then
     if lastGoodWindow and now - lastGoodStamp < maxStaleReuseS then
       staleReuseCount = staleReuseCount + 1
-      lastGoodWindow.stale = true
-      lastGoodWindow.staleReuseCount = staleReuseCount
-      lastGoodWindow.reason = 'reused_last_good_window_empty_tiles'
-      return lastGoodWindow
+      local reused = cloneWindow(lastGoodWindow)
+      reused.stale = true
+      reused.staleReuseCount = staleReuseCount
+      reused.reason = 'reused_last_good_window_empty_tiles'
+      return reused
     end
     lastGoodWindow = nil
     return { ok = false, tiles = {}, reason = 'empty_tile_window', tileCount = 0 }
