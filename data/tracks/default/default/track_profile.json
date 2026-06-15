@@ -1,0 +1,17 @@
+{
+  "schema": "drl_track_profile_v2",
+  "track_id": "default",
+  "layout_id": "default",
+  "confidence": 0.35,
+  "source": "sample_fallback",
+  "surface": {
+    "grip_hint": 1.0,
+    "valid_boundaries": false
+  },
+  "generation": {
+    "uses_ac_spline": true,
+    "uses_track_geometry": true,
+    "description": "Fallback profile used until a real track/layout profile is generated.",
+    "boundary_policy": "unknown_boundaries_use_safety_margin_not_kerb_guessing"
+  }
+}

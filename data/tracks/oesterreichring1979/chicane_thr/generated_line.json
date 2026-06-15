@@ -1,0 +1,12 @@
+{
+  "schema": "drl_generated_line_v2",
+  "track_id": "oesterreichring1979",
+  "layout_id": "chicane_thr",
+  "confidence": 0.58,
+  "source": "predictive_baseline",
+  "points": [],
+  "corner_count": 13,
+  "sample_count": 4000,
+  "generated_at": 1781272475,
+  "notes": "Generated from AC/CSP geometry and predictive physics; not hand-authored."
+}

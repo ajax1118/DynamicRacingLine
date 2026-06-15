@@ -1,0 +1,19 @@
+{
+  "car_id": "default",
+  "confidence": 0.25,
+  "source": "generic_fallback_until_ac_physics_loaded",
+  "brake_decel_g": 1.05,
+  "lateral_grip_g": 1.10,
+  "traction_factor": 0.70,
+  "aero_speed_sensitivity": 0.10,
+  "setup_sensitive_fields": [
+    "tyres",
+    "fuel",
+    "ballast",
+    "restrictor",
+    "brake_power",
+    "brake_bias",
+    "wing",
+    "tyre_pressures"
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "schema": "drl_track_profile_v2",
+  "track_id": "_sample",
+  "layout_id": "default",
+  "source": "sample_placeholder",
+  "confidence": 0.25,
+  "surface": {
+    "grip_hint": 1.0,
+    "valid_boundaries": false
+  },
+  "generation": {
+    "uses_ac_spline": false,
+    "uses_track_geometry": false,
+    "description": "Example only. Real track profiles should be generated from AC/CSP/AI line data when available.",
+    "boundary_policy": "unknown_boundaries_use_safety_margin_not_kerb_guessing"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "car_id": "default",
+  "confidence": 0.25,
+  "source": "class_heuristic_fallback",
+  "capability": {
+    "braking_g": 1.05,
+    "cornering_g": 1.10,
+    "traction": 0.70,
+    "rotation": 0.50,
+    "stability": 0.60,
+    "aero_dependency": 0.10
+  }
+}

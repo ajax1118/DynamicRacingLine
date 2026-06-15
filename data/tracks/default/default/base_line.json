@@ -1,0 +1,8 @@
+{
+  "schema": "drl_base_line_v2",
+  "track_id": "default",
+  "layout_id": "default",
+  "confidence": 0.0,
+  "source": "ac_csp_runtime_geometry",
+  "points": []
+}

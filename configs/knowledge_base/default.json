@@ -1,0 +1,6 @@
+{
+  "schemaVersion": 1,
+  "description": "Seed-only low-confidence priors. Runtime learning is stored in Documents/Assetto Corsa/cfg/DynamicRacingLine_knowledge_base.json.",
+  "cars": {},
+  "tracks": {}
+}

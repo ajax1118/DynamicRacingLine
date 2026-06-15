@@ -1,0 +1,15 @@
+{
+  "id": "default",
+  "name": "Universal track default",
+  "surface_grip_hint": 1.0,
+  "track_lateral_m": 0.0,
+  "road_height_m": 0.035,
+  "visible_ahead_m": 95.0,
+  "visible_behind_m": 0.0,
+  "tile_width_m": 0.55,
+  "tile_length_m": 0.75,
+  "track_sample_count": 1200,
+  "racing_line_max_offset_m": 3.2,
+  "racing_line_apex_offset_m": 2.2,
+  "confidence": 0.5
+}

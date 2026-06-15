@@ -1,0 +1,19 @@
+{
+  "schema": "drl_track_profile_v2",
+  "profile_id": "_street_narrow/default",
+  "boundary_confidence": 0.36,
+  "assumptions": ["street/narrow fallback", "unknown walls", "kerbs not trusted"],
+  "default_half_width_m": 3.75,
+  "usable_width_policy": "shrink_unknown_boundaries",
+  "line_policy": "safe_outside_inside_outside_no_wall_abuse",
+  "surface": {
+    "grip_hint": 0.96,
+    "valid_boundaries": false
+  },
+  "generation": {
+    "uses_ac_spline": false,
+    "uses_track_geometry": false,
+    "description": "Street/narrow fallback profile; real walls and kerbs are unknown until runtime providers supply them.",
+    "boundary_policy": "unknown_boundaries_use_safety_margin_not_kerb_guessing"
+  }
+}

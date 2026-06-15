@@ -1,0 +1,24 @@
+{
+  "schema": "drl_track_profile_v2",
+  "track_id": "canada_2021",
+  "layout_id": "default",
+  "id": "canada_2021",
+  "name": "canada_2021",
+  "confidence": 0.7,
+  "source": "runtime_snapshot_promoted",
+  "surface": {
+    "grip_hint": 0.98000001907349,
+    "road_grip": 1.0,
+    "grip_risk": 0.0,
+    "rain_intensity": 0.0,
+    "rain_wetness": 0.0,
+    "track_thermal_brake_factor": 1.0,
+    "valid_boundaries": false
+  },
+  "generation": {
+    "uses_ac_spline": true,
+    "uses_track_geometry": true,
+    "description": "Runtime-promoted track profile aligned to drl_track_profile_v2.",
+    "boundary_policy": "unknown_boundaries_use_safety_margin_not_kerb_guessing"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "schema": "drl_generated_line_v2",
+  "track_id": "default",
+  "layout_id": "default",
+  "confidence": 0.0,
+  "source": "predictive_baseline_placeholder",
+  "points": [],
+  "notes": "Runtime generation fills real predictive guidance; this file proves schema and fallback loading."
+}

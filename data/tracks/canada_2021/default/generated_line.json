@@ -1,0 +1,12 @@
+{
+  "schema": "drl_generated_line_v2",
+  "track_id": "canada_2021",
+  "layout_id": "default",
+  "confidence": 0.58,
+  "source": "predictive_baseline",
+  "points": [],
+  "corner_count": 19,
+  "sample_count": 3204,
+  "generated_at": 1781236413,
+  "notes": "Generated from AC/CSP geometry and predictive physics; not hand-authored."
+}

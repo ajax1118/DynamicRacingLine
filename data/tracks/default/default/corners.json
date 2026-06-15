@@ -1,0 +1,8 @@
+{
+  "schema": "drl_corners_v2",
+  "track_id": "default",
+  "layout_id": "default",
+  "confidence": 0.0,
+  "source": "generated_at_runtime",
+  "corners": []
+}

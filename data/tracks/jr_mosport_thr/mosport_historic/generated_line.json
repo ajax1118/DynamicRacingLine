@@ -1,0 +1,12 @@
+{
+  "schema": "drl_generated_line_v2",
+  "track_id": "jr_mosport_thr",
+  "layout_id": "mosport_historic",
+  "confidence": 0.58,
+  "source": "predictive_baseline",
+  "points": [],
+  "corner_count": 10,
+  "sample_count": 2902,
+  "generated_at": 1781236795,
+  "notes": "Generated from AC/CSP geometry and predictive physics; not hand-authored."
+}

@@ -1,0 +1,12 @@
+{
+  "schema": "drl_generated_line_v2",
+  "track_id": "monaco_1966_thr",
+  "layout_id": "default",
+  "confidence": 0.58,
+  "source": "predictive_baseline",
+  "points": [],
+  "corner_count": 24,
+  "sample_count": 2323,
+  "generated_at": 1781236883,
+  "notes": "Generated from AC/CSP geometry and predictive physics; not hand-authored."
+}

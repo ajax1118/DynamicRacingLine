@@ -1,0 +1,9 @@
+{
+  "schema": "drl_base_line_v2",
+  "track_id": "_sample",
+  "layout_id": "default",
+  "confidence": 0.0,
+  "source": "sample_placeholder",
+  "points": [],
+  "notes": "Runtime should generate predictive baseline from available centerline/AI/geometry data before using this placeholder."
+}
