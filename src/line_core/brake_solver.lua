@@ -89,6 +89,31 @@ local function speedLimitFromCurvature(k, car, confidence)
   return U.clamp(v, 6.5, car.topSpeed)
 end
 
+local function frictionCircleSpeedLimit(k, car, telemetryContext, confidence, surfaceGrip)
+  local ak = math.abs(k or 0)
+  if ak < 0.0007 then return car.topSpeed end
+
+  local curveCap = speedLimitFromCurvature(k, car, confidence) * math.sqrt(U.clamp(surfaceGrip or 1.0, 0.35, 1.25))
+  local reserve = VehicleEnvelope.frictionCircleBrakeFactor(telemetryContext, k, curveCap)
+  local safety = U.clamp(0.76 + reserve * 0.24, 0.70, 1.0)
+  return U.clamp(curveCap * safety, 6.5, car.topSpeed)
+end
+
+local function referenceAuthorityWeight(referenceBrakeSpeedHints)
+  referenceBrakeSpeedHints = referenceBrakeSpeedHints or {}
+  local quality = referenceBrakeSpeedHints.referenceQuality or {}
+  local qualityConfidence = U.clamp(
+    tonumber(quality.confidence) or tonumber(referenceBrakeSpeedHints.confidence) or 0.0,
+    0.0,
+    1.0)
+  local configured = tonumber(Settings.LINE_CORE_R02_AI_BRAKE_SPEED_REFERENCE_WEIGHT) or Config.AI_REFERENCE_MAX_WEIGHT
+  local maxWeight = tonumber(Config.AI_REFERENCE_MAX_WEIGHT) or 0.34
+  if referenceBrakeSpeedHints.geometryOnly == true then
+    configured = math.min(configured, maxWeight)
+  end
+  return U.clamp(math.min(configured, maxWeight) * qualityConfidence, 0.0, maxWeight)
+end
+
 local function signedCurvatureFromFoundation(solverCurvature, referenceCurvature, referenceWeight)
   referenceWeight = U.clamp(referenceWeight or 0.0, 0.0, 1.0)
   local referenceAbs = math.abs(referenceCurvature or 0) * referenceWeight
@@ -254,16 +279,13 @@ function M.solve(path, frame, opts)
   local referenceSpeedCapMpsByIndex = referenceBrakeSpeedHints.referenceSpeedCapMpsByIndex or {}
   local referenceHintScaleByIndex = referenceBrakeSpeedHints.referenceHintScaleByIndex or {}
   local referenceRiskByIndex = referenceBrakeSpeedHints.referenceRiskByIndex or {}
-  local referenceWeight = U.clamp(
-    tonumber(Settings.LINE_CORE_R02_AI_BRAKE_SPEED_REFERENCE_WEIGHT) or
-      tonumber(referenceBrakeSpeedHints.confidence) or 0.62,
-    0.0,
-    0.88)
+  local referenceWeight = referenceAuthorityWeight(referenceBrakeSpeedHints)
   local k = {}
   local solverCurvatureByIndex = {}
   local aiSplineReferenceCurvatureByIndex = {}
   local target = {}
   local speed = {}
+  local frictionCircleSpeedCapMpsByIndex = {}
   local brakeDecelByIndex = {}
   local brakeEnvelopeByIndex = {}
 
@@ -281,7 +303,10 @@ function M.solve(path, frame, opts)
     local referenceHintScale = U.clamp(tonumber(referenceHintScaleByIndex[i]) or 1.0, 0.50, 1.12)
     local referenceCap = referenceSpeedCap and math.min(referenceSpeedCap, car.topSpeed) or car.topSpeed
     local hintedReferenceCap = math.min(referenceCap * referenceHintScale * (1.18 + confidence * 0.12), car.topSpeed)
-    target[i] = math.min(hintedReferenceCap, speedLimitFromCurvature(foundationCurvature, car, confidence)) * math.sqrt(surfaceGrip)
+    local physicsCurveCap = speedLimitFromCurvature(foundationCurvature, car, confidence) * math.sqrt(surfaceGrip)
+    local frictionCircleCap = frictionCircleSpeedLimit(foundationCurvature, car, telemetryContext, confidence, surfaceGrip)
+    frictionCircleSpeedCapMpsByIndex[i] = frictionCircleCap
+    target[i] = U.clamp(math.min(hintedReferenceCap, physicsCurveCap, frictionCircleCap), 6.5, car.topSpeed)
     speed[i] = target[i]
     brakeEnvelopeByIndex[i] = VehicleEnvelope.brakeEnvelope(telemetryContext, target[i] * 3.6, foundationCurvature, confidence)
     brakeDecelByIndex[i] = U.clamp(
@@ -348,9 +373,11 @@ function M.solve(path, frame, opts)
       curvature = k[i],
       solverCurvature = solverCurvatureByIndex[i],
       referenceCurvature = aiSplineReferenceCurvatureByIndex[i],
+      referenceAuthorityWeight = referenceWeight,
       brakeSpeedFoundationSource = referenceBrakeSpeedHints.source or 'ai_spline_reference',
       targetSpeedMps = target[i],
       solvedSpeedMps = speed[i],
+      frictionCircleSpeedCapMps = frictionCircleSpeedCapMpsByIndex[i],
       surfaceGripFactor = SurfaceHazards.gripAt(opts.surfaceMap, i),
       brakeIntensity = brakeIntensity,
       rawBrakeIntensity = rawBrakeRatios[i] or 0.0,
@@ -403,8 +430,10 @@ function M.solve(path, frame, opts)
     solverCurvatureByIndex = solverCurvatureByIndex,
     referenceCurvatureByIndex = aiSplineReferenceCurvatureByIndex,
     referenceSpeedCapMpsByIndex = referenceSpeedCapMpsByIndex,
+    frictionCircleSpeedCapMpsByIndex = frictionCircleSpeedCapMpsByIndex,
     referenceHintScaleByIndex = referenceHintScaleByIndex,
     referenceRiskByIndex = referenceRiskByIndex,
+    referenceAuthorityWeight = referenceWeight,
     brakeSpeedFoundationSource = referenceBrakeSpeedHints.source or 'ai_spline_reference',
     confidence = confidence,
   }

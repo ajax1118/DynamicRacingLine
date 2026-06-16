@@ -11,6 +11,7 @@ from offline_harness.senior_runtime_harness import (  # noqa: E402
     FrameBudget,
     OfflineTrackFrame,
     ProfileWriteThrottle,
+    ReferenceQuality,
     RenderRecorder,
     RuntimeHealthLogger,
     TileWindowHarness,
@@ -21,6 +22,7 @@ from offline_harness.senior_runtime_harness import (  # noqa: E402
     parse_ai_hints,
     parse_fast_lane_ai,
     parse_surfaces_ini,
+    reference_quality_for_frame,
     solve_brake_profile,
     write_fast_lane_ai,
 )
@@ -136,6 +138,36 @@ def test_progress_lateral_seam_and_boundary_invariants():
     assert clamped == [0.0, 5.0, -4.0, 2.0]
 
 
+def test_ai_reference_quality_rejects_poisoned_lines_and_caps_authority():
+    samples = [
+        {"progress": 0.0, "world": Vec3(0, 0, 0), "leftWidth": 5.0, "rightWidth": 5.0},
+        {"progress": 20.0, "world": Vec3(20, 0, 0), "leftWidth": 5.0, "rightWidth": 5.0},
+        {"progress": 40.0, "world": Vec3(40, 0, 0), "leftWidth": 5.0, "rightWidth": 5.0},
+        {"progress": 60.0, "world": Vec3(60, 0, 0), "leftWidth": 5.0, "rightWidth": 5.0},
+    ]
+    frame = OfflineTrackFrame.prepare(samples, track_length=80.0)
+    good_ai = [Vec3(0, 0, 1.0), Vec3(20, 0, 1.2), Vec3(40, 0, 1.0), Vec3(60, 0, 1.1)]
+    bad_ai = [Vec3(0, 0, 24.0), Vec3(20, 0, 30.0), Vec3(40, 0, 24.0), Vec3(60, 0, 30.0)]
+
+    good_quality = reference_quality_for_frame(frame, good_ai)
+    bad_quality = reference_quality_for_frame(frame, bad_ai)
+
+    assert isinstance(good_quality, ReferenceQuality)
+    assert good_quality.accepted is True
+    assert bad_quality.accepted is False
+    assert bad_quality.reason == "lateral_out_of_bounds"
+
+    ingest = read(SRC / "line_core" / "track_data_ingest.lua")
+    solver = read(SRC / "line_core" / "brake_solver.lua")
+    pipeline = read(SRC / "line_core" / "guidance_pipeline.lua")
+    assert "referenceQualityForFrame" in ingest
+    assert "rejected_ai_reference_quality" in ingest
+    assert "referenceQuality = referenceQuality" in ingest
+    assert "Config.AI_REFERENCE_MAX_WEIGHT" in solver
+    assert "referenceQuality" in solver
+    assert "referenceQuality = referenceBrakeSpeedHints.referenceQuality" in pipeline
+
+
 def test_brake_replay_scenarios_cover_straights_hairpins_chicanes_and_wet_grip():
     straight = solve_brake_profile([0.00005, -0.00004, 0.00003, 0.0] * 10, spacing_m=5.0)
     assert {p.color for p in straight.points} == {"green"}
@@ -158,6 +190,11 @@ def test_brake_replay_scenarios_cover_straights_hairpins_chicanes_and_wet_grip()
     for i in range(2, len(colors) - 2):
         window = colors[i - 2 : i + 3]
         assert window != ["red", "green", "red", "green", "red"]
+
+    solver = read(SRC / "line_core" / "brake_solver.lua")
+    assert "frictionCircleSpeedLimit" in solver
+    assert "VehicleEnvelope.frictionCircleBrakeFactor" in solver
+    assert "referenceAuthorityWeight" in solver
 
 
 def test_tile_window_render_recorder_health_and_budget_contracts():

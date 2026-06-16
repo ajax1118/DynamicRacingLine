@@ -96,6 +96,15 @@ class TrackReference:
     pit_line_used_as_racing_reference: bool = False
 
 
+@dataclass
+class ReferenceQuality:
+    accepted: bool
+    confidence: float
+    coverage: float
+    max_lateral_m: float
+    reason: str
+
+
 def write_fast_lane_ai(path: Path, points: Iterable[tuple[float, float, float, float]], version: int = 7) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     rows = list(points)
@@ -365,6 +374,30 @@ class OfflineTrackFrame:
         for offset, sample in zip(offsets, self.samples, strict=False):
             out.append(clamp(offset, -sample.right_width, sample.left_width))
         return out
+
+
+def reference_quality_for_frame(frame: OfflineTrackFrame, reference_worlds: list[Vec3]) -> ReferenceQuality:
+    if not reference_worlds or len(reference_worlds) < 3:
+        return ReferenceQuality(False, 0.0, 0.0, math.inf, "not_enough_reference_points")
+    matched = 0
+    bad_lateral = 0
+    max_lateral = 0.0
+    for index, sample in enumerate(frame.samples):
+        ref = reference_worlds[min(index, len(reference_worlds) - 1)]
+        projection = frame.project_world(ref, hint_progress=sample.progress, search_radius_m=max(20.0, frame.spacing * 4.0))
+        limit = max(sample.left_width, sample.right_width) + 2.0
+        matched += 1
+        max_lateral = max(max_lateral, abs(projection.lateral))
+        if abs(projection.lateral) > limit:
+            bad_lateral += 1
+    coverage = matched / max(1, len(frame.samples))
+    bad_ratio = bad_lateral / max(1, matched)
+    confidence = clamp(coverage * (1.0 - bad_ratio * 1.35), 0.0, 1.0)
+    if coverage < 0.42:
+        return ReferenceQuality(False, confidence, coverage, max_lateral, "low_coverage")
+    if bad_ratio > 0.20:
+        return ReferenceQuality(False, confidence, coverage, max_lateral, "lateral_out_of_bounds")
+    return ReferenceQuality(confidence >= 0.35, confidence, coverage, max_lateral, "ok")
 
 
 @dataclass

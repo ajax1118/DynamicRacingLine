@@ -2313,12 +2313,23 @@ local function maybeBuildLineCoreGuidance(car, dt)
     return guidance
   end
 
+  M.lineCoreLastError = ok and tostring(guidance and guidance.reason or 'no_guidance') or tostring(guidance)
+  if settings.LINE_CORE_R02_KEEP_LAST_GOOD_ON_LOW_FPS == true and M.lineCoreGuidance then
+    local maxFailureHoldS = math.max(0.10, tonumber(settings.LINE_CORE_R02_STALE_MAX_AGE_S) or 0.45)
+    if now - (tonumber(M.lineCoreGuidanceStamp) or 0.0) <= maxFailureHoldS then
+      M.lineCoreStatus = 'held_build_failure'
+      M.lineCoreStale = true
+      logger.once('line-core-r02-build-failed-held',
+        'LINE_CORE_R02_BUILD_FAILED_HELD reason=' .. tostring(M.lineCoreLastError))
+      return M.lineCoreGuidance
+    end
+  end
+
   M.lineCoreGuidance = nil
   M.lineCoreGuidanceKey = nil
   M.lineCoreGuidanceStamp = 0
   M.lineCoreStatus = 'failed'
   M.lineCoreStale = false
-  M.lineCoreLastError = ok and tostring(guidance and guidance.reason or 'no_guidance') or tostring(guidance)
   logger.once('line-core-r02-build-failed', 'LINE_CORE_R02_BUILD_FAILED reason=' .. tostring(M.lineCoreLastError))
   return nil
 end

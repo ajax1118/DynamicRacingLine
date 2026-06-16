@@ -92,6 +92,62 @@ local function referenceWorldsForFrame(frame, samples)
   return out
 end
 
+local function referenceQualityForFrame(frame, samples, sourceName)
+  local frameSamples = frame and frame.samples or {}
+  if not samples or #samples < 3 or #frameSamples < 3 then
+    return {
+      accepted = false,
+      confidence = 0.0,
+      coverage = 0.0,
+      maxLateralM = math.huge,
+      reason = 'not_enough_reference_points',
+      source = sourceName or 'unknown_reference',
+    }
+  end
+
+  local Frame = require('src.line_core.frame')
+  local matched, badLateral, maxLateral = 0, 0, 0.0
+  local toleranceM = math.max(18.0, (frame.spacing or Config.TARGET_SAMPLE_SPACING_M) * 5.0)
+  for _, s in ipairs(frameSamples) do
+    local ref, distance = U.nearestByProgress(samples, s.progress, frame.length)
+    if ref and (distance or math.huge) <= toleranceM then
+      local world = worldFromSample(ref)
+      local projected = world and Frame.projectWorld(frame, world, s.progress, toleranceM)
+      if projected and projected.ok then
+        matched = matched + 1
+        local lateral = math.abs(tonumber(projected.lateral) or 0.0)
+        maxLateral = math.max(maxLateral, lateral)
+        local limit = math.max(3.0,
+          math.max(tonumber(s.leftWidth) or Config.DEFAULT_TRACK_HALF_WIDTH_M,
+            tonumber(s.rightWidth) or Config.DEFAULT_TRACK_HALF_WIDTH_M) + 2.0)
+        if lateral > limit then badLateral = badLateral + 1 end
+      end
+    end
+  end
+
+  local coverage = matched / math.max(1, #frameSamples)
+  local badRatio = badLateral / math.max(1, matched)
+  local confidence = U.clamp(coverage * (1.0 - badRatio * 1.35), 0.0, 1.0)
+  local reason = 'ok'
+  local accepted = confidence >= Config.AI_REFERENCE_MIN_CONFIDENCE
+  if coverage < 0.42 then
+    accepted = false
+    reason = 'low_coverage'
+  elseif badRatio > 0.20 then
+    accepted = false
+    reason = 'lateral_out_of_bounds'
+  end
+  return {
+    accepted = accepted,
+    confidence = confidence,
+    coverage = coverage,
+    badLateralRatio = badRatio,
+    maxLateralM = maxLateral,
+    reason = reason,
+    source = sourceName or 'unknown_reference',
+  }
+end
+
 local function curvatureAt(worlds, i)
   local n = #worlds
   if n < 3 then return 0 end
@@ -164,8 +220,17 @@ function M.referenceBrakeSpeedHints(frame, runtime)
   local aiLineSamples = samplesFromRuntime(runtime)
   local trackSplineSamples = nonEmptyList(runtime.trackSplineSamples) or nonEmptyList(runtime.centerlineSamples) or
     nonEmptyList(runtime.trackSamples) or nonEmptyList(runtime.samples)
-  local referenceSamples = aiLineSamples or trackSplineSamples
+  local aiQuality = aiLineSamples and referenceQualityForFrame(frame, aiLineSamples, 'ai_spline_reference') or nil
+  local trackQuality = trackSplineSamples and referenceQualityForFrame(frame, trackSplineSamples, 'track_spline_reference') or nil
+  local acceptedAiLineSamples = aiQuality and aiQuality.accepted == true and aiLineSamples or nil
+  local acceptedTrackSplineSamples = trackQuality and trackQuality.accepted == true and trackSplineSamples or nil
+  local referenceSamples = acceptedAiLineSamples or acceptedTrackSplineSamples
   if not referenceSamples or #referenceSamples < 3 then return nil end
+  local referenceQuality = acceptedAiLineSamples and aiQuality or trackQuality
+  local source = acceptedAiLineSamples and 'ai_spline_reference' or 'track_spline_reference'
+  if aiLineSamples and not acceptedAiLineSamples then
+    source = 'track_spline_reference_rejected_ai_reference_quality'
+  end
 
   local worlds = referenceWorldsForFrame(frame, referenceSamples)
   local referenceCurvatureByIndex = {}
@@ -181,18 +246,25 @@ function M.referenceBrakeSpeedHints(frame, runtime)
     referenceSpeedCapMpsByIndex[i] = genericReferenceSpeedCap(k)
   end
   return {
-    source = aiLineSamples and 'ai_spline_reference' or 'track_spline_reference',
+    source = source,
     geometryOnly = true,
-    trackSplineSamples = trackSplineSamples,
-    aiLineSamples = aiLineSamples,
+    trackSplineSamples = acceptedTrackSplineSamples,
+    rejectedTrackSplineSamples = trackSplineSamples and not acceptedTrackSplineSamples and trackSplineSamples or nil,
+    aiLineSamples = acceptedAiLineSamples,
+    rejectedAiLineSamples = aiLineSamples and not acceptedAiLineSamples and aiLineSamples or nil,
+    referenceQuality = referenceQuality,
+    rejectedAiReferenceQuality = aiLineSamples and not acceptedAiLineSamples and aiQuality or nil,
+    rejectedTrackSplineReferenceQuality = trackSplineSamples and not acceptedTrackSplineSamples and trackQuality or nil,
     referenceCurvatureByIndex = referenceCurvatureByIndex,
     referenceSpeedCapMpsByIndex = referenceSpeedCapMpsByIndex,
     referenceHintScaleByIndex = referenceHintScaleByIndex,
     referenceRiskByIndex = referenceRiskByIndex,
-    confidence = aiLineSamples and 0.72 or 0.50,
+    confidence = U.clamp((referenceQuality and referenceQuality.confidence or 0.50) *
+      (acceptedAiLineSamples and 0.82 or 0.58), 0.18, acceptedAiLineSamples and 0.72 or 0.50),
   }
 end
 
 M.hintScaleForProgress = hintScaleForProgress
+M.referenceQualityForFrame = referenceQualityForFrame
 
 return M

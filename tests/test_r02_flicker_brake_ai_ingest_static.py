@@ -19,6 +19,8 @@ def test_r02_fps_hold_prevents_renderer_swap_flicker():
     assert "lineCoreLowFpsHoldUntil" in main
     assert "lineCoreGuidanceStamp" in main
     assert "held_low_fps" in main
+    assert "held_build_failure" in main
+    assert "LINE_CORE_R02_BUILD_FAILED_HELD" in main
     assert "LINE_CORE_R02_KEEP_LAST_GOOD_ON_LOW_FPS" in main
 
 
