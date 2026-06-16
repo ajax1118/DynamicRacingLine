@@ -163,16 +163,17 @@ local function pushAiHint(hints, section, values)
   local startProgress = tonumber(values.START or values.start)
   local endProgress = tonumber(values.END or values['end'])
   if not startProgress or not endProgress or startProgress == endProgress then return end
+  local kind = tostring(section or ''):upper()
+  local defaultValue = kind:find('DANGER', 1, true) and 0.0 or 1.0
   local item = {
     startProgress = startProgress % 1.0,
     endProgress = endProgress % 1.0,
-    value = tonumber(values.VALUE or values.value) or 1.0,
+    value = tonumber(values.VALUE or values.value) or defaultValue,
     left = tonumber(values.LEFT or values.left),
     right = tonumber(values.RIGHT or values.right),
     section = section,
     source = 'ai_hints.ini',
   }
-  local kind = tostring(section or ''):upper()
   if kind:find('BRAKEHINT', 1, true) then
     hints.brakeHints[#hints.brakeHints + 1] = item
   elseif kind:find('DANGER', 1, true) then

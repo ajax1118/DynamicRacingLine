@@ -2128,12 +2128,49 @@ local function learningState()
   return 'enabled_evidence_gated'
 end
 
+local function guidanceCacheState(status, stale)
+  status = tostring(status or 'unknown')
+  if stale == true then return 'stale' end
+  if status == 'cache_hit' or status == 'cached' then return 'hit' end
+  if status == 'fresh' then return 'miss' end
+  return status
+end
+
 local function lineCoreHealthState()
+  local guidance = M.lineCoreGuidance or {}
+  local diagnostics = guidance.diagnostics or {}
+  local dataTruth = diagnostics.dataTruth or {}
+  local reference = dataTruth.trackFileReference or {}
+  local referenceHints = dataTruth.referenceBrakeSpeedHints or {}
+  local brake = guidance.brake or {}
+  local points = guidance.points or brake.points or {}
+  local firstPoint = points and points[1] or {}
+  local lineCoreStatus = M.lineCoreStatus or 'unknown'
+  local lineCoreStale = M.lineCoreStale == true
+  local fallbackReason = 'none'
+  if M.fallbackLineActive == true then
+    fallbackReason = 'fallback_line_active'
+  elseif M.tileRecoveryActive == true then
+    fallbackReason = 'tile_recovery_active'
+  elseif M.spatialPlacementRejectedReason then
+    fallbackReason = tostring(M.spatialPlacementRejectedReason)
+  elseif guidance.reason then
+    fallbackReason = tostring(guidance.reason)
+  end
   return {
-    lineCoreStatus = M.lineCoreStatus or 'unknown',
+    lineCoreStatus = lineCoreStatus,
     lineCoreDataConfidence = M.lineCoreDataConfidence or 0.0,
-    lineCoreStale = M.lineCoreStale == true,
+    lineCoreStale = lineCoreStale,
     learningState = learningState(),
+    rendererMode = tostring(renderer.lastLineRenderMode or renderer.renderSpaceMode or 'unknown'),
+    targetSpeedSource = tostring(firstPoint.brakeSpeedFoundationSource or brake.brakeSpeedFoundationSource or
+      referenceHints.source or guidance.reason or 'unknown'),
+    splineSource = tostring(reference.aiLineSource or reference.source or referenceHints.source or
+      dataTruth.sourceOrder or 'unknown'),
+    fallbackReason = fallbackReason,
+    frameBudgetStatus = lineCoreStatus,
+    cacheState = guidanceCacheState(lineCoreStatus, lineCoreStale),
+    rejectedLineReason = tostring(M.spatialPlacementRejectedReason or M.lineCoreLastError or 'none'),
   }
 end
 
@@ -2865,6 +2902,7 @@ local function prepareTiles(car, dt)
     guidanceSessionReady = M.guidanceSession ~= nil,
     predictiveCornerCount = M.predictiveBaselineSummary and M.predictiveBaselineSummary.corner_count or 0,
     renderStatus = displayState.singleDisplayState,
+    rendererMode = lineCoreHealth.rendererMode,
     tileCount = #tiles,
     cueState = currentCue,
     fallbackLineActive = M.fallbackLineActive,
@@ -2877,6 +2915,12 @@ local function prepareTiles(car, dt)
     lineCoreDataConfidence = lineCoreHealth.lineCoreDataConfidence,
     lineCoreStale = lineCoreHealth.lineCoreStale,
     learningState = lineCoreHealth.learningState,
+    targetSpeedSource = lineCoreHealth.targetSpeedSource,
+    splineSource = lineCoreHealth.splineSource,
+    fallbackReason = lineCoreHealth.fallbackReason,
+    frameBudgetStatus = lineCoreHealth.frameBudgetStatus,
+    cacheState = lineCoreHealth.cacheState,
+    rejectedLineReason = lineCoreHealth.rejectedLineReason,
   })
   return tiles
 end
@@ -3468,6 +3512,7 @@ function M.update(dt)
       guidanceSessionReady = M.guidanceSession ~= nil,
       predictiveCornerCount = M.predictiveBaselineSummary and M.predictiveBaselineSummary.corner_count or 0,
       renderStatus = displayState.singleDisplayState,
+      rendererMode = lineCoreHealth.rendererMode,
       tileCount = 0,
       cueState = M.currentCue,
       fallbackLineActive = M.fallbackLineActive,
@@ -3480,6 +3525,12 @@ function M.update(dt)
       lineCoreDataConfidence = lineCoreHealth.lineCoreDataConfidence,
       lineCoreStale = lineCoreHealth.lineCoreStale,
       learningState = lineCoreHealth.learningState,
+      targetSpeedSource = lineCoreHealth.targetSpeedSource,
+      splineSource = lineCoreHealth.splineSource,
+      fallbackReason = lineCoreHealth.fallbackReason,
+      frameBudgetStatus = lineCoreHealth.frameBudgetStatus,
+      cacheState = lineCoreHealth.cacheState,
+      rejectedLineReason = lineCoreHealth.rejectedLineReason,
     })
     return
   end
@@ -3503,6 +3554,7 @@ function M.update(dt)
       guidanceSessionReady = M.guidanceSession ~= nil,
       predictiveCornerCount = M.predictiveBaselineSummary and M.predictiveBaselineSummary.corner_count or 0,
       renderStatus = displayState.singleDisplayState,
+      rendererMode = lineCoreHealth.rendererMode,
       tileCount = 0,
       cueState = M.currentCue,
       fallbackLineActive = M.fallbackLineActive,
@@ -3515,6 +3567,12 @@ function M.update(dt)
       lineCoreDataConfidence = lineCoreHealth.lineCoreDataConfidence,
       lineCoreStale = lineCoreHealth.lineCoreStale,
       learningState = lineCoreHealth.learningState,
+      targetSpeedSource = lineCoreHealth.targetSpeedSource,
+      splineSource = lineCoreHealth.splineSource,
+      fallbackReason = lineCoreHealth.fallbackReason,
+      frameBudgetStatus = lineCoreHealth.frameBudgetStatus,
+      cacheState = lineCoreHealth.cacheState,
+      rejectedLineReason = lineCoreHealth.rejectedLineReason,
     })
   end
 end

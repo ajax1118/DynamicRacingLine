@@ -218,12 +218,15 @@ function M.projectWorld(frame, pos, hintProgress, searchRadiusM)
   local t = U.clamp(U.dot2(ap, ab) / ab2, 0, 1)
   local center = U.add(a.world, U.mul(ab, t))
   local tangent = U.norm2(ab)
-  local normal = U.leftNormal2(tangent)
-  local lateral = U.dot2(U.sub(p, center), normal)
   local bProgress = b.progress
   if bestIndex == n then bProgress = frame.length end
   local progress = U.lerp(a.progress, bProgress, t)
   progress = M.wrapProgress(frame, progress)
+  local interpolated = M.interpolateSample(frame, progress)
+  center = interpolated.world
+  tangent = interpolated.tangent or tangent
+  local normal = interpolated.normal or U.leftNormal2(tangent)
+  local lateral = U.dot2(U.sub(p, center), normal)
 
   return {
     ok = true,

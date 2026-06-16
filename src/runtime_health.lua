@@ -27,11 +27,18 @@ function M.report(state)
   local tileCount = math.max(0, math.floor(finiteNumber(state.tileCount, 0) + 0.5))
   local guidanceSessionReady = state.guidanceSessionReady == true
   local renderStatus = tostring(state.renderStatus or 'unknown')
+  local rendererMode = tostring(state.rendererMode or 'unknown')
   local cueState = tostring(state.cueState or 'none')
   local lineCoreStatus = tostring(state.lineCoreStatus or 'unknown')
   local lineCoreDataConfidence = finiteNumber(state.lineCoreDataConfidence, 0.0)
   local lineCoreStale = state.lineCoreStale == true
   local learningState = tostring(state.learningState or 'unknown')
+  local targetSpeedSource = tostring(state.targetSpeedSource or 'unknown')
+  local splineSource = tostring(state.splineSource or 'unknown')
+  local fallbackReason = tostring(state.fallbackReason or 'none')
+  local frameBudgetStatus = tostring(state.frameBudgetStatus or lineCoreStatus)
+  local cacheState = tostring(state.cacheState or 'unknown')
+  local rejectedLineReason = tostring(state.rejectedLineReason or 'none')
   local signature = table.concat({
     boolText(state.enabled == true),
     boolText(state.initialized == true),
@@ -39,12 +46,19 @@ function M.report(state)
     boolText(guidanceSessionReady),
     tostring(predictiveCornerCount),
     renderStatus,
+    rendererMode,
     tostring(tileCount),
     cueState,
     lineCoreStatus,
     string.format('%.2f', lineCoreDataConfidence),
     boolText(lineCoreStale),
     learningState,
+    targetSpeedSource,
+    splineSource,
+    fallbackReason,
+    frameBudgetStatus,
+    cacheState,
+    rejectedLineReason,
   }, ':')
 
   local now = nowSeconds()
@@ -54,12 +68,19 @@ function M.report(state)
       guidanceSessionReady = guidanceSessionReady,
       predictiveCornerCount = predictiveCornerCount,
       renderStatus = renderStatus,
+      rendererMode = rendererMode,
       tileCount = tileCount,
       cueState = cueState,
       lineCoreStatus = lineCoreStatus,
       lineCoreDataConfidence = lineCoreDataConfidence,
       lineCoreStale = lineCoreStale,
       learningState = learningState,
+      targetSpeedSource = targetSpeedSource,
+      splineSource = splineSource,
+      fallbackReason = fallbackReason,
+      frameBudgetStatus = frameBudgetStatus,
+      cacheState = cacheState,
+      rejectedLineReason = rejectedLineReason,
     }
   end
 
@@ -71,12 +92,19 @@ function M.report(state)
     ' guidanceSessionReady=' .. boolText(guidanceSessionReady) ..
     ' predictiveCornerCount=' .. tostring(predictiveCornerCount) ..
     ' renderStatus=' .. renderStatus ..
+    ' rendererMode=' .. rendererMode ..
     ' tileCount=' .. tostring(tileCount) ..
     ' cueState=' .. cueState ..
     ' lineCoreStatus=' .. lineCoreStatus ..
     ' lineCoreDataConfidence=' .. string.format('%.2f', lineCoreDataConfidence) ..
     ' lineCoreStale=' .. boolText(lineCoreStale) ..
     ' learningState=' .. learningState ..
+    ' targetSpeedSource=' .. targetSpeedSource ..
+    ' splineSource=' .. splineSource ..
+    ' fallbackReason=' .. fallbackReason ..
+    ' frameBudgetStatus=' .. frameBudgetStatus ..
+    ' cacheState=' .. cacheState ..
+    ' rejectedLineReason=' .. rejectedLineReason ..
     ' fallbackLineActive=' .. boolText(state.fallbackLineActive == true) ..
     ' tileRecoveryActive=' .. boolText(state.tileRecoveryActive == true) ..
     ' hudDrawCount=' .. tostring(math.floor(finiteNumber(state.hudDrawCount, 0) + 0.5)) ..
@@ -87,12 +115,19 @@ function M.report(state)
     guidanceSessionReady = guidanceSessionReady,
     predictiveCornerCount = predictiveCornerCount,
     renderStatus = renderStatus,
+    rendererMode = rendererMode,
     tileCount = tileCount,
     cueState = cueState,
     lineCoreStatus = lineCoreStatus,
     lineCoreDataConfidence = lineCoreDataConfidence,
     lineCoreStale = lineCoreStale,
     learningState = learningState,
+    targetSpeedSource = targetSpeedSource,
+    splineSource = splineSource,
+    fallbackReason = fallbackReason,
+    frameBudgetStatus = frameBudgetStatus,
+    cacheState = cacheState,
+    rejectedLineReason = rejectedLineReason,
   }
 end
 
