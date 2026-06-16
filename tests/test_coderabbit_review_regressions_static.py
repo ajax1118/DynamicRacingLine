@@ -48,11 +48,16 @@ def test_surface_mapping_uses_r02_risk_map_fields_once():
 def test_renderer_fails_open_and_counts_screen_ray_fallback_draws():
     renderer = read(SRC / "renderer.lua")
 
+    assert "fmt = function(value)" in renderer
+    assert "screenPointText = function(point)" in renderer
+    assert "vecText = function(v)" in renderer
+    assert "function fmt(value)" not in renderer
     assert "return false, 'unknown_main_window'" in renderer
     assert "tileDrawCount = M.lastDrawCount" in renderer
     assert "totalDrawCount = tileDrawCount + screenRayDrawCount" in renderer
     assert "' tileDrawCount=' .. tostring(tileDrawCount)" in renderer
     assert "return totalDrawCount" in renderer
+    assert "ray_fallback" not in renderer
 
 
 def test_car_state_identity_and_wheel_fallback_are_not_duplicating_wheel_one():
@@ -164,6 +169,7 @@ def test_whole_app_review_runtime_guards():
 
 
 def test_runtime_capability_profiles_use_nested_schema_and_loader_compatibility():
+    default_config = load_json(APP_ROOT / "configs" / "cars" / "default.json")
     lambo = load_json(APP_ROOT / "data" / "cars" / "ks_lamborghini_gallardo_sl_s3" / "car_profile.json")
     mercedes = load_json(APP_ROOT / "data" / "cars" / "mercedes_sls" / "car_profile.json")
     snapshot_stager = read(SRC / "snapshot_stager.lua")
@@ -171,17 +177,19 @@ def test_runtime_capability_profiles_use_nested_schema_and_loader_compatibility(
     dynamic_context = read(SRC / "dynamic_context.lua")
     line_core_dynamic = read(LINE_CORE / "dynamic_context.lua")
 
-    for profile in [lambo, mercedes]:
+    for profile in [default_config, lambo, mercedes]:
         assert "capability" in profile
-        assert "brake_g" not in profile
+        assert "brake_decel_g" not in profile
         assert "cornering_g" not in profile
-        assert "speed_aero_strength" not in profile
         assert profile["capability"]["brake_decel_g"] > 0
         assert profile["capability"]["cornering_g"] > 0
 
+    assert default_config["capability"]["min_corner_speed_kph"] == 35.0
+    assert default_config["capability"]["max_target_speed_kph"] == 315.0
     assert "capability = {" in snapshot_stager
     assert "payload.car.capability.brake_decel_g" in snapshot_stager
     assert "carCapabilityValue(car" in profile_loader
+    assert "min_corner_speed_kph', 'minCornerSpeedKph'" in profile_loader
     assert "carProfile.capability" in dynamic_context
     assert "profile and profile.capability" in line_core_dynamic
 

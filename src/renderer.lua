@@ -629,11 +629,11 @@ local function tileRearEdgeForwardM(tile, car, lengthScale)
   return centerForwardM - tileHalfLengthM(tile, lengthScale)
 end
 
-function fmt(value)
+fmt = function(value)
   return string.format('%.3f', tonumber(value) or 0)
 end
 
-function screenPointText(point)
+screenPointText = function(point)
   local ok, x, y = pcall(function()
     return tonumber(point and (point.x or point[1])), tonumber(point and (point.y or point[2]))
   end)
@@ -814,7 +814,7 @@ local function reverseCanaryColor()
   return makeRgbm(2.0, 0.0, 2.0, 1.0)
 end
 
-function vecText(v)
+vecText = function(v)
   return fmt(math3d.x(v)) .. ',' .. fmt(math3d.y(v)) .. ',' .. fmt(math3d.z(v))
 end
 
@@ -1235,7 +1235,6 @@ local function drawScreenRayFallbackLine(tiles, options, car)
     castVisibleTrackRay(0.5, 0.70) or
     castVisibleTrackRay(0.5, 0.55)
   if not hit or not finiteVec(hit.pos) then return 0 end
-  if tostring(hit.source or '') == 'ray_fallback' then return 0 end
 
   local normal = normalizeHitNormal(hit.normal)
   local basis = readCameraBasis()

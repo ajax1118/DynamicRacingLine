@@ -124,8 +124,8 @@ local function validateCar(raw)
   else
     car.speed_aero_strength = nil
   end
-  car.min_corner_speed_kph = numeric(car.min_corner_speed_kph, settings.MIN_CORNER_SPEED_KPH, 20.0, 180.0)
-  car.max_target_speed_kph = numeric(car.max_target_speed_kph, settings.MAX_TARGET_SPEED_KPH, 80.0, 450.0)
+  car.min_corner_speed_kph = numeric(carCapabilityValue(car, {'min_corner_speed_kph', 'minCornerSpeedKph'}), settings.MIN_CORNER_SPEED_KPH, 20.0, 180.0)
+  car.max_target_speed_kph = numeric(carCapabilityValue(car, {'max_target_speed_kph', 'maxTargetSpeedKph'}), settings.MAX_TARGET_SPEED_KPH, 80.0, 450.0)
   car.confidence = numeric(car.confidence, 0.5, 0.0, 1.0)
   return car
 end

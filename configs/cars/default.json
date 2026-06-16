@@ -1,9 +1,11 @@
 {
   "id": "default",
   "name": "Conservative default",
-  "brake_decel_g": 1.05,
-  "cornering_g": 1.05,
-  "min_corner_speed_kph": 35.0,
-  "max_target_speed_kph": 315.0,
+  "capability": {
+    "brake_decel_g": 1.05,
+    "cornering_g": 1.05,
+    "min_corner_speed_kph": 35.0,
+    "max_target_speed_kph": 315.0
+  },
   "confidence": 0.5
 }
