@@ -410,7 +410,11 @@ end
 local function shouldSkipRenderTarget()
   if settings.MAIN_CAMERA_ONLY_RENDER_TARGETS ~= true then return false, 'disabled' end
   local width, height = renderTargetDimensions()
-  if not width or not height then return true, 'unknown_render_target' end
+  if not width or not height then
+    logger.once('render_target_dimensions_unavailable_fail_open',
+      'RENDER_TARGET_DIMENSIONS_UNAVAILABLE_FAIL_OPEN action=continue_rendering')
+    return false, 'unknown_render_target_fail_open'
+  end
   local windowWidth, windowHeight, windowSource = mainWindowDimensions()
   local skip, reason, aspect, windowAspect, minWindowFraction, aspectTolerance, dimensionTolerance,
     widthRatio, heightRatio, targetScale =

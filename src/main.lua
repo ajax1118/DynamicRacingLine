@@ -198,6 +198,10 @@ local function ensureSetupCurrent(car)
   local oldSetupFingerprint = tostring(M.activeSetupFingerprint or '')
   M.activeSetupFingerprint = setupFingerprint
   M.dynamicContextNextAt = 0
+  M.lineCoreGuidance = nil
+  M.lineCoreGuidanceStamp = 0
+  M.lineCoreLowFpsHoldUntil = 0
+  M.lineCoreStale = false
   M.normalizedSession = id_normalizer.session(sessionIdentity(), car)
   M.guidanceSession = profile_store.loadSession(sessionIdentity(), car, M.runtimeProfile)
   M.guidanceSession.track_file_reference = M.trackFileReference
@@ -3548,6 +3552,14 @@ function M.DrawHUD()
   drawFullscreenDirectHudOverlay('IN_GAME')
   drawChildHudOverlay('IN_GAME')
   drawFinalHudOverlay()
+end
+
+function M.fullscreenUI()
+  init()
+  if not M.enabled then
+    return
+  end
+  drawFullscreenDirectHudOverlay('FULLSCREEN_UI')
 end
 
 function M.windowMain(dt)

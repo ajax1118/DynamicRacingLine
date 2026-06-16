@@ -12,8 +12,9 @@ function M.write(message)
   pcall(function()
     local file = io.open(logPath(), 'a')
     if not file then return end
-    file:write(line)
+    local ok, err = pcall(function() file:write(line) end)
     file:close()
+    if not ok then error(err) end
   end)
 end
 
@@ -28,8 +29,9 @@ function M.clear()
   pcall(function()
     local file = io.open(logPath(), 'w')
     if not file then return end
-    file:write('')
+    local ok, err = pcall(function() file:write('') end)
     file:close()
+    if not ok then error(err) end
   end)
   M.onceKeys = {}
 end

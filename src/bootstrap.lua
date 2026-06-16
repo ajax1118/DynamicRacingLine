@@ -2,6 +2,7 @@ local M = {}
 
 local sentinelKeys = {}
 local errorKeys = {}
+local unpackValues = table.unpack or unpack
 
 local function bootstrapLog(message)
   local docs = os.getenv('USERPROFILE') or ''
@@ -35,47 +36,39 @@ local function callbackError(name, err)
   bootstrapLog('DYNAMIC_RACING_LINE_CALLBACK_ERROR callback=' .. tostring(name) .. ' error=' .. tostring(err))
 end
 
+local function invokeCallback(main, name, method, ...)
+  callbackSentinel(name)
+  if not main then callbackError(name, 'main_not_loaded'); return end
+  local fn = main and main[method]
+  if type(fn) ~= 'function' then callbackError(name, 'missing_main_method_' .. tostring(method)); return end
+  local args = {...}
+  local ok, err = pcall(function() fn(unpackValues(args)) end)
+  if not ok then callbackError(name, err) end
+end
+
 local function installCallbacks(main, entryName)
   function script.update(dt)
-    callbackSentinel('update')
-    if not main then callbackError('update', 'main_not_loaded'); return end
-    local ok, err = pcall(function() main.update(dt or 0) end)
-    if not ok then callbackError('update', err) end
+    invokeCallback(main, 'update', 'update', dt or 0)
   end
 
   function script.windowMain(dt)
-    callbackSentinel('windowMain')
-    if not main then callbackError('windowMain', 'main_not_loaded'); return end
-    local ok, err = pcall(function() main.windowMain(dt or 0) end)
-    if not ok then callbackError('windowMain', err) end
+    invokeCallback(main, 'windowMain', 'windowMain', dt or 0)
   end
 
   function script.Draw3D()
-    callbackSentinel('Draw3D')
-    if not main then callbackError('Draw3D', 'main_not_loaded'); return end
-    local ok, err = pcall(function() main.Draw3D() end)
-    if not ok then callbackError('Draw3D', err) end
+    invokeCallback(main, 'Draw3D', 'Draw3D')
   end
 
   function script.draw3D()
-    callbackSentinel('draw3D')
-    if not main then callbackError('draw3D', 'main_not_loaded'); return end
-    local ok, err = pcall(function() main.Draw3D() end)
-    if not ok then callbackError('draw3D', err) end
+    invokeCallback(main, 'draw3D', 'Draw3D')
   end
 
   function script.DrawHUD()
-    callbackSentinel('DrawHUD')
-    if not main then callbackError('DrawHUD', 'main_not_loaded'); return end
-    local ok, err = pcall(function() main.DrawHUD() end)
-    if not ok then callbackError('DrawHUD', err) end
+    invokeCallback(main, 'DrawHUD', 'DrawHUD')
   end
 
   function script.fullscreenUI()
-    callbackSentinel('fullscreenUI')
-    if not main then callbackError('fullscreenUI', 'main_not_loaded'); return end
-    local ok, err = pcall(function() main.DrawHUD() end)
-    if not ok then callbackError('fullscreenUI', err) end
+    invokeCallback(main, 'fullscreenUI', 'fullscreenUI')
   end
 end
 

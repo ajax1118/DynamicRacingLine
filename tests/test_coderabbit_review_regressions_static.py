@@ -58,6 +58,8 @@ def test_renderer_fails_open_and_counts_screen_ray_fallback_draws():
     assert "' tileDrawCount=' .. tostring(tileDrawCount)" in renderer
     assert "return totalDrawCount" in renderer
     assert "ray_fallback" not in renderer
+    assert "unknown_render_target_fail_open" in renderer
+    assert "RENDER_TARGET_DIMENSIONS_UNAVAILABLE_FAIL_OPEN" in renderer
 
 
 def test_car_state_identity_and_wheel_fallback_are_not_duplicating_wheel_one():
@@ -195,6 +197,9 @@ def test_runtime_capability_profiles_use_nested_schema_and_loader_compatibility(
 
 
 def test_coderabbit_runtime_safety_regressions_are_covered():
+    bootstrap = read(SRC / "bootstrap.lua")
+    logger = read(SRC / "logger.lua")
+    main = read(SRC / "main.lua")
     diagnostics = read(LINE_CORE / "diagnostics.lua")
     validator = read(LINE_CORE / "validator.lua")
     evaluator = read(LINE_CORE / "path_evaluator.lua")
@@ -203,7 +208,16 @@ def test_coderabbit_runtime_safety_regressions_are_covered():
     profile_store = read(SRC / "profile_store.lua")
     legacy = read(LINE_CORE / "legacy_constants_bridge.lua")
     runtime_context = read(LINE_CORE / "runtime_context.lua")
+    hazards = read(LINE_CORE / "surface_hazards.lua")
+    optimizer = read(LINE_CORE / "optimizer.lua")
 
+    assert "local unpackValues = table.unpack or unpack" in bootstrap
+    assert "invokeCallback(main, 'fullscreenUI', 'fullscreenUI')" in bootstrap
+    assert "function M.fullscreenUI()" in main
+    assert "M.lineCoreGuidance = nil" in main
+    assert "M.lineCoreLowFpsHoldUntil = 0" in main
+    assert "local ok, err = pcall(function() file:write(line) end)" in logger
+    assert "local ok, err = pcall(function() file:write('') end)" in logger
     assert "type(guidance) ~= 'table'" in diagnostics
     assert "step_seam" in validator
     assert "accel_seam" in validator
@@ -216,6 +230,22 @@ def test_coderabbit_runtime_safety_regressions_are_covered():
     assert "depth > 8" in profile_store
     assert "requires an explicit target table" in legacy
     assert "return Dynamic.setupHash" in runtime_context
+    assert "Validator.repair(out, frame, boundary" in hazards
+    assert "smoothedByValidator = true" in hazards
+    assert "frame = frame" in optimizer
+
+
+def test_github_actions_static_validation_exists():
+    workflow = read(APP_ROOT / ".github" / "workflows" / "static-validation.yml")
+
+    assert "permissions:\n      contents: read" in workflow
+    assert "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683" in workflow
+    assert "persist-credentials: false" in workflow
+    assert "actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b" in workflow
+    assert "python -m pytest tests -q" in workflow
+    assert "luac5.4 -p" in workflow
+    assert "missing require" in workflow
+    assert "json ok" in workflow
 
 
 def test_static_tests_use_repo_relative_app_root():

@@ -192,6 +192,10 @@ function M.solve(frame, boundary, corners, opts)
   if opts.surfaceMap or opts.hazards then
     local repairedOffsets, hazardRepairs = SurfaceHazards.repairOffsets(boundary, offsets, opts.surfaceMap or opts.hazards, {
       maxRisk = Config.SURFACE_HAZARD_MAX_RISK,
+      frame = frame,
+      curvatures = opts.curvatures,
+      speedMps = opts.speedMps or 0,
+      confidence = opts.confidence or (boundary and boundary.confidence) or 0.55,
     })
     offsets = repairedOffsets
     diagnostics.surfaceHazardRepairs = hazardRepairs

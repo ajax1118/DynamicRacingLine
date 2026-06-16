@@ -61,6 +61,7 @@ def test_r02_line_core_modules_are_recovered_by_internal_header_name():
 
     for name in EXPECTED_MODULES:
         text = read(LINE_CORE / name)
+        assert text.strip(), f"{name} is unexpectedly empty"
         assert f"line_core/{name}" in text.splitlines()[0]
 
 

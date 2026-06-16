@@ -2,6 +2,7 @@
 -- Risk classifier for unknown kerbs, sausage kerbs, walls, grass, pit entry, wet/dirty surfaces.
 
 local U = require('src.line_core.math_utils')
+local Validator = require('src.line_core.validator')
 local M = {}
 
 function M.classify(sample)
@@ -72,6 +73,18 @@ function M.repairOffsets(boundary, offsets, surfaceMap, opts)
       o = Boundaries.clampOffset(boundary, i, o)
     end
     out[i] = o
+  end
+  if repairs.changed > 0 then
+    local frame = opts.frame or { spacing = opts.spacing or 3.0 }
+    local repaired, validation = Validator.repair(out, frame, boundary, {
+      curvatures = opts.curvatures,
+      speedMps = opts.speedMps or 0,
+      confidence = opts.confidence or (boundary and boundary.confidence) or 0.55,
+      allowCenterlineFallback = false,
+    })
+    out = repaired
+    repairs.validation = validation
+    repairs.smoothedByValidator = true
   end
   return out, repairs
 end
